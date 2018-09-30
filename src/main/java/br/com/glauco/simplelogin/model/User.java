@@ -1,13 +1,17 @@
 package br.com.glauco.simplelogin.model;
 
-import javax.persistence.*;
+import lombok.Data;
 
+import javax.persistence.*;
+import java.util.Set;
+
+@Data
 @Entity
 public class User {
 
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Id
-    @Column(name = "id")
+    @Column(name = "user_id")
     private Long id;
 
     @Column(name = "username")
@@ -16,27 +20,8 @@ public class User {
     @Column(name = "password")
     private String password;
 
-    public Long getId() {
-        return id;
-    }
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
 }
