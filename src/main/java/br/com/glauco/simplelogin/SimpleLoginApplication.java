@@ -10,18 +10,11 @@ import org.springframework.context.annotation.Bean;
 @SpringBootApplication
 public class SimpleLoginApplication {
 
-    @Autowired
-    private UserService userService;
-
     public static void main(String[] args) {
         SpringApplication.run(SimpleLoginApplication.class, args);
     }
 
-    @Bean
-    InitializingBean createUser(){
-        return () ->
-            userService.findorCreate();
-        }
+
 }
 
 
