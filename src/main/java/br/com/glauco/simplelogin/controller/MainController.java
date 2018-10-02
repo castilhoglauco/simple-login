@@ -1,17 +1,31 @@
 package br.com.glauco.simplelogin.controller;
 
+import br.com.glauco.simplelogin.configuration.GenericResponse;
 import br.com.glauco.simplelogin.model.User;
 import br.com.glauco.simplelogin.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Controller
 public class MainController {
@@ -19,6 +33,9 @@ public class MainController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private MessageSource messages;
 
     @RequestMapping(value={"/", "/login"}, method = RequestMethod.GET)
     public ModelAndView login(){
@@ -68,5 +85,38 @@ public class MainController {
         modelAndView.setViewName("admin/home");
         return modelAndView;
     }
+
+    @RequestMapping(value = "/registrationConfirm", method = RequestMethod.GET)
+    public String confirmRegistration(@RequestParam("token") String token, Model model, HttpServletRequest request) throws UnsupportedEncodingException{
+        Locale locale = request.getLocale();
+        String result = userService.validateVerificationToken(token);
+        if (result.equals("valid")) {
+            User user = userService.getUser(token);
+            if (user.isUsing2FA()) {
+                model.addAttribute("qr", userService.generateQRUrl(user));
+                return "redirect:/qrcode.html?lang=" + locale.getLanguage();
+            }
+
+            model.addAttribute(
+                    "message", messages.getMessage("message.accountVerified", null, locale));
+            return "redirect:/login?lang=" + locale.getLanguage();
+        }
+        return null;//TODO nao sei o que retornar aqui
+    }
+
+    @RequestMapping(value = "/user/update/2fa", method = RequestMethod.POST)
+    @ResponseBody
+    public GenericResponse modifyUser2FA(@RequestParam("use2FA") boolean use2FA)
+            throws UnsupportedEncodingException {
+        User user = userService.updateUser2FA(use2FA);
+        if (use2FA) {
+            return new GenericResponse(userService.generateQRUrl(user));
+        }
+        return null;
+    }
+
+
+
+
 
 }
